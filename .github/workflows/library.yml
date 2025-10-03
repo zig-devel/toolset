@@ -40,3 +40,6 @@ jobs:
     # Library checks
     - name: Build
       run: zig build --summary all
+
+    - name: Unit tests
+      run: zig build test --summary all
