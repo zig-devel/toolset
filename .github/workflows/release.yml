@@ -58,7 +58,7 @@ jobs:
         name: ${{ github.ref_name }}
         tag_name: ${{ github.ref_name }}
         body: |
-          Release CI checks: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Release checks**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         # Don't change it; have someone review it before releasing.
         # We use immutable releases, and there's no way to fix it.
         draft: true
