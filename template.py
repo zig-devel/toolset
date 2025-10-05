@@ -148,7 +148,7 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
             .optimize = optimize,
         }});
 
-        _ = mod;      // stub
+        _ = mod; // stub
         _ = upstream; // stub
 
         // Smoke unit test
@@ -197,8 +197,7 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
     }});
 
     // Just a smoke test to make sure the library is linked correctly.
-    test {{
-    }}
+    test {{}}
   """)
 
 
