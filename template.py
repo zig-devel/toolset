@@ -171,7 +171,7 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
   _WriteFile("build.zig.zon", f"""
     .{{
         .name = .{name},
-        .version = "{version}",
+        .version = "{version}-0",
         .fingerprint = {fingerprint}, // Changing this has security and trust implications.
         .minimum_zig_version = "0.15.1",
         .dependencies = .{{}},
