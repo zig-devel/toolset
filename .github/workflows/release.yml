@@ -20,9 +20,17 @@ jobs:
 
     - name: Parse & validate tag reference
       run: |
+        number_regex="(0|[1-9][0-9]*)"  # valid: 0, 42; invalid: 00 or 08
+        version_regex="^$number_regex\.$number_regex\.$number_regex-$number_regex$"
+
         # full package version, e.g. '1.2.3-2'
         gittag_ref=${{github.ref_name}}
         package_ref="$(sed -n 's/\s*\.version\s*=\s*"\(.*\)",/\1/p' build.zig.zon)"
+
+        if [[ ! $gittag_ref =~ $version_regex ]]; then
+          echo "Invalid version in git tag!"
+          exit 1
+        fi
 
         if [ "$gittag_ref" != "$package_ref" ]; then
           echo "Different versions in build.zig.zon and git tag: gittag_ref=$gittag_ref, package_ref=$package_ref."
