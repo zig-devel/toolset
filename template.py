@@ -150,6 +150,19 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
 
         _ = mod;      // stub
         _ = upstream; // stub
+
+        // Smoke unit test
+        const test_mod = b.addModule("test", .{{
+            .root_source_file = b.path("tests.zig"),
+            .target = target,
+            .optimize = optimize,
+        }});
+        // TODO: mod.linkLibrary(lib);
+
+        const run_mod_tests = b.addRunArtifact(b.addTest(.{{ .root_module = test_mod }}));
+
+        const test_step = b.step("test", "Run tests");
+        test_step.dependOn(&run_mod_tests.step);
     }}
   """)
 
