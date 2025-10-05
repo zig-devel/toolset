@@ -57,7 +57,7 @@ def _SetupGithubActions():
     jobs:
       build:
         name: Build and test library
-        uses: {GITHUB_ORG}/.infra/.github/workflows/library.yml@main
+        uses: {GITHUB_ORG}/.github/.github/workflows/library.yml@main
   """)
 
   _WriteFile(".github/workflows/release.yml", f"""
@@ -70,7 +70,7 @@ def _SetupGithubActions():
     jobs:
       release:
         name: Prepare GitHub release
-        uses: {GITHUB_ORG}/.infra/.github/workflows/release.yml@main
+        uses: {GITHUB_ORG}/.github/.github/workflows/release.yml@main
         permissions:
           contents: write
   """)
