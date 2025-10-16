@@ -16,10 +16,13 @@ jobs:
     - uses: actions/checkout@v5
 
     - uses: actions/setup-node@v5
-      with: { node-version-file: 'package.json' }
-    - uses: actions/setup-python@v6
-      with: { python-version-file: 'pyproject.toml' }
-    - uses: astral-sh/setup-uv@v6
+      with:
+        node-version-file: 'package.json'
+
+    - uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+        activate-environment: true
 
     - name: Install tools
       run: |
@@ -29,20 +32,21 @@ jobs:
         uv sync --locked --all-extras
         npm ci --no-fund --ignore-scripts
 
+    - name: Lint *.md files
+      run: |
+        npx markdownlint-cli2 "*.md" "profile/*.md"
+
     - name: Lint *.sh files
       run: |
         find . -name '*.sh' -exec shellcheck --color=always {} +
 
     - name: Lint *.py files
       run: |
-        uvx ruff check
-        uvx ruff format --check
-
-    - name: Lint *.md files
-      run: |
-        npx markdownlint-cli2 "*.md" "profile/*.md"
+        ruff check
+        ruff format --check
 
     - name: Update 'latest' tag
+      if: github.ref == 'refs/heads/main'
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
