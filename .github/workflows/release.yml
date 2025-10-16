@@ -11,7 +11,7 @@ jobs:
 
   # Converting a git tag into a stub of an immutable release
   release:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     needs: [build]
     permissions:
       contents: write  # for releases API
