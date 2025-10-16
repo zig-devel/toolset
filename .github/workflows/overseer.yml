@@ -6,6 +6,9 @@ on:
   - cron: 0 12 * * *  # at 12:00 each day
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   overseer:
     runs-on: ubuntu-latest
