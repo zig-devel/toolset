@@ -4,30 +4,24 @@ on:
   workflow_call:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [blacksmith-2vcpu-ubuntu-2404]
-        zig-version: [latest, master]
+  lint:
+    name: Runs static checks
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is cheaper than x64
     steps:
     - uses: actions/checkout@v5
+    - uses: mlugg/setup-zig@v2
+      with: { version: "latest" }
 
-    # Install runtimes
     - uses: actions/setup-python@v6
       with: { python-version: '3.13' }
     - uses: actions/setup-node@v5
       with: { node-version: "latest" }
-    - uses: mlugg/setup-zig@v2
-      with: { version: "${{ matrix.zig-version }}" }
 
     - name: Install tools
       run: |
         pip install reuse==5.1.1
         npm install --global markdownlint-cli2@0.18.1
 
-    # Static checks and linters
     - name: Check licenses
       run: reuse lint
 
@@ -37,7 +31,28 @@ jobs:
     - name: Check zig formatting
       run: zig fmt --ast-check --check .
 
-    # Library checks
+  build:
+    runs-on: ${{ matrix.os }}
+    needs: [lint]
+    strategy:
+      fail-fast: true  # save CI if tests fail
+      matrix:
+        # It would be nice to run tests on the full matrix (including different OS versions),
+        # but CI minutes are paid. Blacksmith is significantly cheaper but only provides Linux.
+        # We can afford x64 and arm64. For the macos and windows, only the main architectures.
+        os:
+        - macos-latest                     # macos arm64
+        - windows-latest                   # windows x64
+        - blacksmith-2vcpu-ubuntu-2404     # linux x64
+        - blacksmith-2vcpu-ubuntu-2404-arm # linux arm64
+        # TODO: perhaps we can save CI if check all zig versions within a single job
+        zig-version: [latest, master]
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: mlugg/setup-zig@v2
+      with: { version: "${{ matrix.zig-version }}" }
+
     - name: Build
       run: zig build --summary all
 

@@ -3,6 +3,7 @@ name: Run linters and update the latest
 on:
   push:
     branches: [ main ]
+  pull_request:
 
 permissions:
   contents: write
