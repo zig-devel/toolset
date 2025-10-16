@@ -1,0 +1,10 @@
+{
+  "name": "zig-devel",
+  "description": "Infrastructure of the zig-devel project",
+  "engines": {
+    "node": ">=25.0.0"
+  },
+  "dependencies": {
+    "markdownlint-cli2": "^0.18.1"
+  }
+}

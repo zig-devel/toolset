@@ -1,0 +1,10 @@
+[project]
+name = "zig-devel"
+version = "0.1.0"
+description = "Infrastructure of the zig-devel project"
+requires-python = ">=3.13"
+dependencies = [
+    "nvchecker>=2.19",
+    "reuse>=6.1.2",
+    "ruff>=0.14.0",
+]

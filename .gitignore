@@ -1,1 +1,6 @@
+# package managers
+.venv/
+node_modules/
+
+# intermediate dirs from our scripts
 .overseer_cache/
