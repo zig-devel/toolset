@@ -14,4 +14,4 @@ license, so as not to impose any additional restrictions.
 **Release:** library versions are pushed to an immutable Github Release,
 you can be sure that v1.42.0 points to the same commit in all your repositories.
 
-**Updates:** Automated checks for new versions in upstream twice a day.
+**Updates:** Automated checks for new versions in upstream every 3 hours.
