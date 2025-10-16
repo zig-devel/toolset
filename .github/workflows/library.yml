@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [blacksmith-2vcpu-ubuntu-2404]
         zig-version: [latest, master]
     steps:
     - uses: actions/checkout@v5
