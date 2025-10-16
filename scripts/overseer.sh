@@ -14,13 +14,13 @@ set -euo pipefail
 
 function fatal() {
   local message=$1
-  >&2 echo "ERROR: " $message
+  >&2 echo "ERROR: $message"
   exit 1
 }
 
 function log() {
   local message=$1
-  >&2 echo "LOG: " $message
+  >&2 echo "LOG: $message"
 }
 
 GITHUB_ORG="zig-devel"
@@ -31,7 +31,7 @@ INVALIDATE_CACHE=false
 CHECK_UPDATES=true
 CHECK_REPOSITORY_SETTINGS=true
 
-REPOS_DIR=".overseer-cache"
+REPOS_DIR=".overseer_cache"
 REPOS_CACHE="$REPOS_DIR/repos.jsonl"
 
 while [[ $# -gt 0 ]]; do
@@ -70,13 +70,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       fatal "Unknown option $1"
-      exit 1
       ;;
   esac
 done
 
 if [ $INVALIDATE_CACHE = true ]; then
-  rm -rf $REPOS_DIR $REPOS_CACHE
+  rm -rf "$REPOS_DIR" "$REPOS_CACHE"
 fi
 
 mkdir -p "$REPOS_DIR"
@@ -91,7 +90,7 @@ else
     api_url="https://api.github.com/orgs/$GITHUB_ORG/repos?per_page=100&page=$page"
     api_bearer=""
 
-    if [ ! -z "$GITHUB_TOKEN" ]; then
+    if [ -n "$GITHUB_TOKEN" ]; then
       api_bearer="Authorization: Bearer $GITHUB_TOKEN"
     fi
 
@@ -100,7 +99,7 @@ else
       break
     fi
 
-    echo "$response" >> $REPOS_CACHE
+    echo "$response" >> "$REPOS_CACHE"
 
     ((page++))
   done
@@ -110,24 +109,24 @@ function at() {
   local json=$1
   local key=$2
 
-  echo $(echo $json | jq -r ".${key}")
+  echo "$json" | jq -r ".${key}"
 }
 
 while read -r repository; do
   # extract info about repositories
-  name=$(at $repository 'name')
-  clone_url=$(at $repository 'clone_url')
-  default_branch=$(at $repository 'default_branch')
+  name=$(at "$repository" 'name')
+  clone_url=$(at "$repository" 'clone_url')
+  default_branch=$(at "$repository" 'default_branch')
 
-  private=$(at $repository 'private')
-  archived=$(at $repository 'archived')
-  is_template=$(at $repository 'is_template')
+  private=$(at "$repository" 'private')
+  archived=$(at "$repository" 'archived')
+  is_template=$(at "$repository" 'is_template')
 
-  has_issues=$(at $repository 'has_issues')
-  has_wiki=$(at $repository 'has_wiki')
-  has_pages=$(at $repository 'has_pages')
-  has_projects=$(at $repository 'has_projects')
-  has_discussions=$(at $repository 'has_discussions')
+  has_issues=$(at "$repository" 'has_issues')
+  has_wiki=$(at "$repository" 'has_wiki')
+  has_pages=$(at "$repository" 'has_pages')
+  has_projects=$(at "$repository" 'has_projects')
+  has_discussions=$(at "$repository" 'has_discussions')
 
   # validate repository structure
   if [[ "$name" =~ ^\. || $private == "true" || $archived == "true" ]]; then
@@ -137,37 +136,37 @@ while read -r repository; do
   log "Check $name repository config..."
 
   if [[ $CHECK_REPOSITORY_SETTINGS = true ]]; then
-    [ $default_branch = "main" ] || fatal "Default branch must me 'main' not $default_branch"
-    [ $is_template = "false" ] || fatal "Repository should not be a template"
+    [ "$default_branch" = "main" ] || fatal "Default branch must me 'main' not $default_branch"
+    [ "$is_template" = "false" ] || fatal "Repository should not be a template"
 
-    [ $has_issues = "true" ] || fatal "Issues must be enabled"
-    [ $has_wiki = "false" ] || fatal "Wiki must be disabled"
-    [ $has_pages = "false" ] || fatal "Pages must be disabled"
-    [ $has_projects = "false" ] || fatal "Projects must be disabled"
-    [ $has_discussions = "false" ] || fatal "Discussions must be disabled"
+    [ "$has_issues" = "true" ] || fatal "Issues must be enabled"
+    [ "$has_wiki" = "false" ] || fatal "Wiki must be disabled"
+    [ "$has_pages" = "false" ] || fatal "Pages must be disabled"
+    [ "$has_projects" = "false" ] || fatal "Projects must be disabled"
+    [ "$has_discussions" = "false" ] || fatal "Discussions must be disabled"
   fi
 
   # clone repo to intermediate directory
   git_dir="$REPOS_DIR/$name"
   if [[ -d $git_dir ]]; then
-    cd $git_dir
+    cd "$git_dir"
 
     git fetch -q origin
     git reset -q --hard "origin/$default_branch"
     git clean -q -xd --force
   else
-    git clone --depth 1 --branch "$default_branch" $clone_url "$git_dir"
-    cd $git_dir
+    git clone --depth 1 --branch "$default_branch" "$clone_url" "$git_dir"
+    cd "$git_dir"
   fi
 
   if [[ $CHECK_UPDATES = true ]]; then
     nvchecker -c .nvchecker.toml
     update=$(nvcmp -c .nvchecker.toml)
 
-    if [[ ! -z $update ]]; then
+    if [[ -n $update ]]; then
       fatal "$name has new version!"
     fi
   fi
 
   cd - >> /dev/null
-done < $REPOS_CACHE
+done < "$REPOS_CACHE"
