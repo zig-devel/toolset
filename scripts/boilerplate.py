@@ -4,16 +4,50 @@ Creates a new project from a template.
 Uses several global dependencies (including zig, reuse, and nvchecker).
 """
 
-import os
-import sys
-import json
 import argparse
+import json
 import logging
+import os
 import subprocess
+import sys
 from pathlib import Path
+
+from rich.console import Console
+from rich.logging import RichHandler
 
 GITHUB_ORG = "zig-devel"
 INTERNAL_LICENSE = "0BSD"
+
+console = Console()
+
+
+def zig(cmd):
+    cmd = f"zig {cmd}"
+    # zig prints all logs to stderr and adds a prefix like `info:` or `error:`
+    process = subprocess.Popen(
+        cmd, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
+    for line in process.stdout:
+        if line.startswith("error: "):
+            logging.error(line.strip().removeprefix("error: "))
+        else:
+            logging.info(line.strip().removeprefix("info: "))
+    process.wait()
+    if process.returncode != 0:
+        logging.critical(f"'{cmd}' failed with exit code {process.returncode}")
+        exit(1)
+
+
+def system(cmd):
+    process = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
+    for line in process.stdout:
+        logging.info(line.strip())
+    process.wait()
+    if process.returncode != 0:
+        logging.critical(f"Failed with exit code {process.returncode}")
+        exit(1)
 
 
 def _WriteFile(filename: str, payload: str):
@@ -43,6 +77,7 @@ def _WriteFile(filename: str, payload: str):
 
 
 def _SetupGitConfigs():
+    logging.info("Generate .gitattributes")
     _WriteFile(
         ".gitattributes",
         """
@@ -50,6 +85,8 @@ def _SetupGitConfigs():
             *.zon text eol=lf
         """,
     )
+
+    logging.info("Generate .gitignore")
     _WriteFile(
         ".gitignore",
         """
@@ -60,6 +97,7 @@ def _SetupGitConfigs():
 
 
 def _SetupGithubActions():
+    logging.info("Generate library build workflow")
     _WriteFile(
         ".github/workflows/library.yml",
         f"""
@@ -76,10 +114,11 @@ def _SetupGithubActions():
         jobs:
         build:
             name: Build and test library
-            uses: {GITHUB_ORG}/.github/.github/workflows/library.yml@main
+            uses: {GITHUB_ORG}/.github/.github/workflows/library.yml@latest
         """,
     )
 
+    logging.info("Generate library release workflow")
     _WriteFile(
         ".github/workflows/release.yml",
         f"""
@@ -92,7 +131,7 @@ def _SetupGithubActions():
         jobs:
         release:
             name: Prepare GitHub release
-            uses: {GITHUB_ORG}/.github/.github/workflows/release.yml@main
+            uses: {GITHUB_ORG}/.github/.github/workflows/release.yml@latest
             permissions:
             contents: write
         """,
@@ -100,6 +139,7 @@ def _SetupGithubActions():
 
 
 def _SetupAutoUpdate(git: str):
+    logging.info("Generate nvchecker config")
     _WriteFile(
         ".nvchecker.toml",
         f"""
@@ -114,7 +154,10 @@ def _SetupAutoUpdate(git: str):
         """,
     )
 
-    os.system("nvchecker -c .nvchecker.toml")
+    logging.info("Fetch latest version")
+    system(
+        "nvchecker -c .nvchecker.toml -l error"
+    )  # TODO: use python api instead of subprocess
     os.rename(".github/newver.json", ".github/oldver.json")
 
     git = git.removesuffix(".git").removesuffix("/")
@@ -123,6 +166,7 @@ def _SetupAutoUpdate(git: str):
         manifest = json.load(f)
         upstream = manifest["data"]["upstream"]
 
+        logging.info(f"Latest version detected: {upstream}")
         return upstream["version"], upstream["revision"]
 
 
@@ -130,6 +174,9 @@ def _SetupLicenses(project_licenses: list[str]):
     project_licenses = [spdx for spdx in project_licenses if spdx != INTERNAL_LICENSE]
     project_licenses = [INTERNAL_LICENSE] + project_licenses
 
+    logging.info(f"Detected licenses: {project_licenses}")
+
+    logging.info("Generate reuse config")
     _WriteFile(
         "REUSE.toml",
         f"""
@@ -154,14 +201,24 @@ def _SetupLicenses(project_licenses: list[str]):
         """,
     )
 
-    os.system("reuse download --all")
+    logging.info("Download licenses files...")
+    system("reuse download --all")
 
     return project_licenses
 
 
 def _SetupZigPackage(name: str, version: str, git: str, revision: str):
-    os.system("zig init --minimal")
+    logging.info("Init zig package")
+    zig("init --minimal")
 
+    fingerprint = subprocess.check_output(
+        "cat build.zig.zon | sed -n 's/\\s*\\.fingerprint = \\(.*\\),/\\1/p'",
+        text=True,
+        shell=True,
+    ).strip()
+    logging.info(f"Detect project fingerprint: {fingerprint}")
+
+    logging.info("Generate build.zig boilerplate")
     _WriteFile(
         "build.zig",
         f"""
@@ -198,15 +255,7 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
         """,
     )
 
-    fingerprint = subprocess.check_output(
-        [
-            "bash",
-            "-c",
-            "cat build.zig.zon | sed -n 's/\\s*\\.fingerprint = \\(.*\\),/\\1/p'",
-        ],
-        text=True,
-    )
-
+    logging.info("Generate build.zig.zon boilerplate")
     _WriteFile(
         "build.zig.zon",
         f"""
@@ -228,9 +277,7 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
         """,
     )
 
-    archive_link = f"{git}/archive/{revision}.tar.gz"
-    os.system(f"zig fetch --save={name} {archive_link}")
-
+    logging.info("Generate tests.zig boilerplate")
     _WriteFile(
         "tests.zig",
         f"""
@@ -244,6 +291,12 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
         test {{}}
         """,
     )
+
+    git = git.removesuffix(".git").removesuffix("/")
+    archive_link = f"{git}/archive/{revision}.tar.gz"
+
+    logging.info(f"Download upstream sources from {archive_link}")
+    zig(f"fetch --save={name} {archive_link}")
 
 
 def _Licenselink(spdx: str):
@@ -306,31 +359,35 @@ def main(argv):
 
     args = parser.parse_args(argv)
 
+    logging.basicConfig(
+        level=logging.NOTSET,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler()],
+    )
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
-    logging.debug(args.license)
-
-    logging.info("Init repository")
-    os.system(f"git init {args.name}")
+    console.print("[bold]Init git repository...[/bold]")
+    system(f"git init {args.name}")
     os.chdir(args.name)
 
-    logging.info("Add Git configs")
+    console.print("[bold]Setup git configs...[/bold]")
     _SetupGitConfigs()
 
-    logging.info("Add GitHubActions configs")
+    console.print("[bold]Setup GitHub Actions...[/bold]")
     _SetupGithubActions()
 
-    logging.info("Add autoupdate configs")
+    console.print("[bold]Configure nvchecker...[/bold]")
     version, revision = _SetupAutoUpdate(args.git)
 
-    logging.info("Add licenses")
+    console.print("[bold]Configure licenses...[/bold]")
     licenses = _SetupLicenses(args.license)
 
-    logging.info("Setup zig package")
+    console.print("[bold]Init zig package...[/bold]")
     _SetupZigPackage(args.name, version, args.git, revision)
 
-    logging.info("Add readme")
+    console.print("[bold]Generate readme...[/bold]")
     _SetupDocs(args.name, args.description, args.url, version, licenses)
 
 
