@@ -1,0 +1,22 @@
+name: Look for issues in packages
+
+on:
+  schedule:
+  - cron: 0 0  * * *  # at 00:00 each day
+  - cron: 0 12 * * *  # at 12:00 each day
+  workflow_dispatch:
+
+jobs:
+  overseer:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-python@v6
+      with: { python-version: '3.13' }
+
+    - name: Install tools
+      run: pip install nvchecker==2.19
+
+    - run: scripts/overseer.sh --github-token ${{ secrets.GITHUB_TOKEN }}
+
