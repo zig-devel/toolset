@@ -103,16 +103,19 @@ def _SetupGithubActions():
         f"""
         name: Build and test library
 
+        permissions:
+          contents: read
+
         on:
-        push:
+          push:
             branches: [main]
-        pull_request:
+          pull_request:
             branches: [main]
             types: [opened, synchronize]
-        workflow_dispatch:
+          workflow_dispatch:
 
         jobs:
-        build:
+          build:
             name: Build and test library
             uses: {GITHUB_ORG}/.github/.github/workflows/library.yml@latest
         """,
@@ -125,15 +128,15 @@ def _SetupGithubActions():
         name: Prepare GH release
 
         on:
-        push:
+          push:
             tags: [ '*.*.*-*' ]
 
         jobs:
-        release:
+          release:
             name: Prepare GitHub release
             uses: {GITHUB_ORG}/.github/.github/workflows/release.yml@latest
             permissions:
-            contents: write
+              contents: write
         """,
     )
 
