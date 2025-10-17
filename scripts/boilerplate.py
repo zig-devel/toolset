@@ -8,45 +8,33 @@ import argparse
 import json
 import logging
 import os
-import subprocess
 import sys
 from pathlib import Path
+
+from plumbum.cmd import cat, sed, zig, git, reuse, nvchecker
 
 from rich.console import Console
 from rich.logging import RichHandler
 
 GITHUB_ORG = "zig-devel"
+GITHUB_REPO = f"{GITHUB_ORG}/.github"
 INTERNAL_LICENSE = "0BSD"
 
 console = Console()
 
 
-def zig(cmd):
-    cmd = f"zig {cmd}"
-    # zig prints all logs to stderr and adds a prefix like `info:` or `error:`
-    process = subprocess.Popen(
-        cmd, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
-    for line in process.stdout:
-        if line.startswith("error: "):
-            logging.error(line.strip().removeprefix("error: "))
-        else:
-            logging.info(line.strip().removeprefix("info: "))
-    process.wait()
-    if process.returncode != 0:
-        logging.critical(f"'{cmd}' failed with exit code {process.returncode}")
-        exit(1)
+def cmd(command):
+    (returncode, stdout, stderr) = command.run(retcode=None)
 
+    stdout = stdout.strip()
+    if stdout != "":
+        logging.info(stdout)
 
-def system(cmd):
-    process = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
-    for line in process.stdout:
-        logging.info(line.strip())
-    process.wait()
-    if process.returncode != 0:
-        logging.critical(f"Failed with exit code {process.returncode}")
+    if returncode != 0:
+        logging.error(f"'{command}' failed with exit code {returncode}")
+        stderr = stderr.strip()
+        if stderr != "":
+            logging.error(stderr)
         exit(1)
 
 
@@ -117,7 +105,7 @@ def _SetupGithubActions():
         jobs:
           build:
             name: Build and test library
-            uses: {GITHUB_ORG}/.github/.github/workflows/library.yml@latest
+            uses: {GITHUB_REPO}/.github/workflows/library.yml@latest
         """,
     )
 
@@ -134,7 +122,7 @@ def _SetupGithubActions():
         jobs:
           release:
             name: Prepare GitHub release
-            uses: {GITHUB_ORG}/.github/.github/workflows/release.yml@latest
+            uses: {GITHUB_REPO}/.github/workflows/release.yml@latest
             permissions:
               contents: write
         """,
@@ -158,9 +146,8 @@ def _SetupAutoUpdate(git: str):
     )
 
     logging.info("Fetch latest version")
-    system(
-        "nvchecker -c .nvchecker.toml -l error"
-    )  # TODO: use python api instead of subprocess
+
+    cmd(nvchecker["-c", ".nvchecker.toml", "-l", "error"])
     os.rename(".github/newver.json", ".github/oldver.json")
 
     git = git.removesuffix(".git").removesuffix("/")
@@ -205,20 +192,18 @@ def _SetupLicenses(project_licenses: list[str]):
     )
 
     logging.info("Download licenses files...")
-    system("reuse download --all")
+    cmd(reuse["download", "--all"])
 
     return project_licenses
 
 
 def _SetupZigPackage(name: str, version: str, git: str, revision: str):
     logging.info("Init zig package")
-    zig("init --minimal")
+    cmd(zig["init", "--minimal"])
 
-    fingerprint = subprocess.check_output(
-        "cat build.zig.zon | sed -n 's/\\s*\\.fingerprint = \\(.*\\),/\\1/p'",
-        text=True,
-        shell=True,
-    ).strip()
+    fingerprint = (
+        cat["build.zig.zon"] | sed["-n", "s/\\s*\\.fingerprint = \\(.*\\),/\\1/p"]
+    )().strip()
     logging.info(f"Detect project fingerprint: {fingerprint}")
 
     logging.info("Generate build.zig boilerplate")
@@ -299,7 +284,7 @@ def _SetupZigPackage(name: str, version: str, git: str, revision: str):
     archive_link = f"{git}/archive/{revision}.tar.gz"
 
     logging.info(f"Download upstream sources from {archive_link}")
-    zig(f"fetch --save={name} {archive_link}")
+    cmd(zig["fetch", f"--save={name}", archive_link])
 
 
 def _Licenselink(spdx: str):
@@ -363,7 +348,7 @@ def main(argv):
     args = parser.parse_args(argv)
 
     logging.basicConfig(
-        level=logging.NOTSET,
+        level=logging.INFO,
         format="%(message)s",
         datefmt="[%X]",
         handlers=[RichHandler()],
@@ -372,7 +357,7 @@ def main(argv):
         logging.basicConfig(level=logging.DEBUG)
 
     console.print("[bold]Init git repository...[/bold]")
-    system(f"git init {args.name}")
+    cmd(git["init", args.name])
     os.chdir(args.name)
 
     console.print("[bold]Setup git configs...[/bold]")
