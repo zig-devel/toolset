@@ -23,7 +23,7 @@ jobs:
     - run: sudo apt-get update && sudo apt-get install -y shellcheck
     - run: pip install .  # install it to call it via a shortcut
 
-    - run: zd lint --strict --no-check-zig --no-check-licenses
+    - run: zd lint --strict --no-check-zig
 
     - name: Update 'latest' tag
       if: github.ref == 'refs/heads/main'

@@ -1,0 +1,16 @@
+version = 1
+
+[[annotations]]
+path = [
+  "README.md",
+  "REUSE.toml",
+  "src/**",
+  "profile/**",
+  "pyproject.toml",
+  "uv.lock",
+  ".github/**",
+  ".gitignore",
+  ".gitattributes",
+]
+SPDX-FileCopyrightText = "Zig Devel contributors"
+SPDX-License-Identifier = "AGPL-3.0-only"
