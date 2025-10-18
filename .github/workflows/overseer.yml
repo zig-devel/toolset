@@ -24,5 +24,5 @@ jobs:
       run: |
         uv sync --locked --all-extras
 
-    - run: scripts/overseer.sh --github-token ${{ secrets.GITHUB_TOKEN }}
+    - run: python -m tool inspect --github-token ${{ secrets.GITHUB_TOKEN }}
 

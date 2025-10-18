@@ -1,26 +1,17 @@
-#!/usr/bin/env python3
-"""
-Creates a new project from a template.
-Uses several global dependencies (including zig, reuse, and nvchecker).
-"""
-
-import argparse
 import json
 import logging
 import os
-import sys
 from pathlib import Path
 
-from plumbum.cmd import cat, sed, zig, git, reuse, nvchecker
+from plumbum.cmd import cat, sed, git, reuse, nvchecker
 
 from rich.console import Console
-from rich.logging import RichHandler
+
+console = Console()
 
 GITHUB_ORG = "zig-devel"
 GITHUB_REPO = f"{GITHUB_ORG}/.github"
 INTERNAL_LICENSE = "0BSD"
-
-console = Console()
 
 
 def cmd(command):
@@ -198,6 +189,8 @@ def _SetupLicenses(project_licenses: list[str]):
 
 
 def _SetupZigPackage(name: str, version: str, git: str, revision: str):
+    from plumbum.cmd import zig  # zig is not installed by default
+
     logging.info("Init zig package")
     cmd(zig["init", "--minimal"])
 
@@ -336,26 +329,7 @@ def _SetupDocs(name: str, desc: str, url: str, version: str, licenses: list[str]
     )
 
 
-def main(argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--name", help="Library name", required=True)
-    parser.add_argument("--description", help="Library description", required=True)
-    parser.add_argument("--url", help="Project url", required=True)
-    parser.add_argument("--git", help="Project gitrepo", required=True)
-    parser.add_argument("--license", help="Library license SPDX identifier", nargs="+")
-    parser.add_argument("--verbose", help="Verbose logging", action="store_true")
-
-    args = parser.parse_args(argv)
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler()],
-    )
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-
+def run(args):
     console.print("[bold]Init git repository...[/bold]")
     cmd(git["init", args.name])
     os.chdir(args.name)
@@ -379,5 +353,15 @@ def main(argv):
     _SetupDocs(args.name, args.description, args.url, version, licenses)
 
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+def cli(subparsers):
+    parser = subparsers.add_parser(
+        "init",
+        help="Initializes a new library from a template",
+    )
+    parser.add_argument("--name", help="Library name", required=True)
+    parser.add_argument("--description", help="Library description", required=True)
+    parser.add_argument("--url", help="Project url", required=True)
+    parser.add_argument("--git", help="Project gitrepo", required=True)
+    parser.add_argument("--license", help="Library license SPDX identifier", nargs="+")
+
+    parser.set_defaults(func=run)

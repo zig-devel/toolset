@@ -1,5 +1,8 @@
 # package managers
 .venv/
+**/__pycache__/
+.ruff_cache/
+
 node_modules/
 
 # intermediate dirs from our scripts
