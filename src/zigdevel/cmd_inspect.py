@@ -10,7 +10,7 @@ from plumbum import local
 from plumbum.cmd import curl, jq, git
 
 from .common import nvchecker, nvcmp
-from .common import GITHUB_ORG
+from .common import GITHUB_ORG, GITHUB_INTERNAL_REPOS
 
 
 class PkgSettingsException(Exception):
@@ -50,7 +50,10 @@ def inspect_package(args, line):
 
     lib = json.loads(line)
 
-    if lib["name"].startswith(".") or lib["private"] or lib["archived"]:
+    if lib["name"] in GITHUB_INTERNAL_REPOS:
+        return
+
+    if lib["private"] or lib["archived"]:
         return
 
     logging.info(f"Check {lib['name']} repository config...")

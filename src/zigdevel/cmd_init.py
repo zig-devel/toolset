@@ -7,7 +7,7 @@ from plumbum.cmd import cat, sed, git
 
 from .common import cmd, console
 from .common import reuse, nvchecker
-from .common import GITHUB_ORG, GITHUB_REPO, INTERNAL_LICENSE
+from .common import GITHUB_ORG, GITHUB_REPO_TOOLSET, INTERNAL_LICENSE
 
 
 def _WriteFile(filename: str, payload: str):
@@ -57,6 +57,8 @@ def _SetupGitConfigs():
 
 
 def _SetupGithubActions():
+    origin = f"{GITHUB_ORG}/{GITHUB_REPO_TOOLSET}/.github/workflows"
+
     logging.info("Generate library build workflow")
     _WriteFile(
         ".github/workflows/library.yml",
@@ -77,7 +79,7 @@ def _SetupGithubActions():
         jobs:
           build:
             name: Build and test library
-            uses: {GITHUB_REPO}/.github/workflows/library.yml@latest
+            uses: {origin}/_library.yml@latest
         """,
     )
 
@@ -94,7 +96,7 @@ def _SetupGithubActions():
         jobs:
           release:
             name: Prepare GitHub release
-            uses: {GITHUB_REPO}/.github/workflows/release.yml@latest
+            uses: {origin}/_release.yml@latest
             permissions:
               contents: write
         """,

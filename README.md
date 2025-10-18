@@ -19,7 +19,7 @@ The tool serves several purposes:
 **Use standalone:**
 
 ```bash
-pip install git+https://github.com/zig-devel/.github#latest
+pip install git+https://github.com/zig-devel/toolset#latest
 
 # use CLI interface
 zd --help

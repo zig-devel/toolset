@@ -13,7 +13,7 @@ jobs:
     - uses: actions/setup-node@v5
     - uses: mlugg/setup-zig@v2
 
-    - run: pip install git+https://github.com/zig-devel/.github#latest
+    - run: pip install git+https://github.com/zig-devel/toolset#latest
     - run: zd lint --strict --no-check-sh
 
   build:

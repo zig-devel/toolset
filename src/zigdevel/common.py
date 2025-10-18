@@ -6,7 +6,10 @@ from plumbum import local
 from rich.console import Console
 
 GITHUB_ORG = "zig-devel"
-GITHUB_REPO = f"{GITHUB_ORG}/.github"
+
+GITHUB_REPO_GITHUB = ".github"
+GITHUB_REPO_TOOLSET = "toolset"
+GITHUB_INTERNAL_REPOS = {GITHUB_REPO_GITHUB, GITHUB_REPO_TOOLSET}
 
 INTERNAL_LICENSE = "0BSD"
 

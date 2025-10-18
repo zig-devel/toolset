@@ -5,7 +5,6 @@ path = [
   "README.md",
   "REUSE.toml",
   "src/**",
-  "profile/**",
   "pyproject.toml",
   "uv.lock",
   ".github/**",

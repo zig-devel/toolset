@@ -7,7 +7,7 @@ jobs:
   # Before creating a release, we re-run the tests
   build:
     name: Build and test library
-    uses: zig-devel/.github/.github/workflows/library.yml@main
+    uses: zig-devel/toolset/.github/workflows/library.yml@latest
 
   # Converting a git tag into a stub of an immutable release
   release:

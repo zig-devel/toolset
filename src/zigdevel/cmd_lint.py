@@ -41,7 +41,7 @@ def lint_md(args):
         return
 
     # TODO: maybe it's worth looking for a locally installed version?
-    cmd(npx["-y", "markdownlint-cli2@0.18.1", "*.md", "profile/*.md"])
+    cmd(npx["-y", "markdownlint-cli2@0.18.1", "*.md"])
 
 
 def lint_zig(args):
