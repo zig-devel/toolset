@@ -14,36 +14,16 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is half the price
     steps:
     - uses: actions/checkout@v5
-
     - uses: actions/setup-node@v5
-      with:
-        node-version-file: 'package.json'
-
     - uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
         activate-environment: true
 
-    - name: Install tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y shellcheck
+    - run: sudo apt-get update && sudo apt-get install -y shellcheck
+    - run: pip install .  # install it to call it via a shortcut
 
-        uv sync --locked --all-extras
-        npm ci --no-fund --ignore-scripts
-
-    - name: Lint *.md files
-      run: |
-        npx markdownlint-cli2 "*.md" "profile/*.md"
-
-    - name: Lint *.sh files
-      run: |
-        find . -name '*.sh' -exec shellcheck --color=always {} +
-
-    - name: Lint *.py files
-      run: |
-        ruff check
-        ruff format --check
+    - run: zd lint --strict --no-check-zig --no-check-licenses
 
     - name: Update 'latest' tag
       if: github.ref == 'refs/heads/main'

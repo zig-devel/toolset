@@ -9,27 +9,12 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is half the price
     steps:
     - uses: actions/checkout@v5
-    - uses: mlugg/setup-zig@v2
-      with: { version: "latest" }
-
     - uses: actions/setup-python@v6
-      with: { python-version: '3.13' }
     - uses: actions/setup-node@v5
-      with: { node-version: "latest" }
+    - uses: mlugg/setup-zig@v2
 
-    - name: Install tools
-      run: |
-        pip install reuse==5.1.1
-        npm install --global markdownlint-cli2@0.18.1
-
-    - name: Check licenses
-      run: reuse lint
-
-    - name: Check markdown formatting
-      run: markdownlint-cli2 "**/*.md"
-
-    - name: Check zig formatting
-      run: zig fmt --ast-check --check .
+    - run: pip install git+https://github.com/zig-devel/.github#latest
+    - run: zd lint --strict --no-check-sh
 
   build:
     runs-on: ${{ matrix.os }}

@@ -1,4 +1,4 @@
-name: Look for issues in packages
+name: Inspect packages
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  overseer:
+  inspect:
     runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is half the price
     steps:
     - uses: actions/checkout@v5
@@ -20,8 +20,5 @@ jobs:
         enable-cache: true
         activate-environment: true
 
-    - name: Install tools
-      run: |
-        uv sync --locked --all-extras
-
-    - run: python -m src.zigdevel inspect --github-token ${{ secrets.GITHUB_TOKEN }}
+    - run: pip install .  # install it to call it via a shortcut
+    - run: zd inspect --github-token ${{ secrets.GITHUB_TOKEN }}

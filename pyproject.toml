@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Nikolay Govorov", email = "me@govorov.online" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "nvchecker>=2.19",
     "plumbum>=1.9.0",

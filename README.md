@@ -14,9 +14,27 @@ The tool serves several purposes:
 - don't clutter libs repos with infrastructure;
 - avoid vendor lock-in with a single CI provider.
 
-To use project locally install dependencies:
+**Use standalone:**
 
 ```bash
-npm ci --no-fund --ignore-scripts
+pip install git+https://github.com/zig-devel/.github#latest
+```
+
+**Use locally:**
+
+Install dependencies:
+
+- [uv](https://github.com/astral-sh/uv) build system for python;
+- (optional) Node.js to use some linters;
+- (optional) [ShellCheck](https://www.shellcheck.net/) for validate shell scripts.
+
+```bash
+# install dependencies
 uv sync --locked --all-extras
+
+# activate environment
+. .venv/bin/activate
+
+# use CLI interface
+zd --help
 ```

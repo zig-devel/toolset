@@ -7,21 +7,23 @@ import logging
 from rich.logging import RichHandler
 
 from . import cmd_init
+from . import cmd_lint
 from . import cmd_inspect
 
 
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser(
         description="""
-    Overseer is an automation tool within zig-devel.
-    It should remain autonomous so that the infrastructure
-    doesn't depend on the CI provider and everything can be done locally.
-    """
+        Overseer is an automation tool within zig-devel.
+        It should remain autonomous so that the infrastructure
+        doesn't depend on the CI provider and everything can be done locally.
+        """
     )
     parser.add_argument("--verbose", help="Verbose logging", action="store_true")
 
-    subparsers = parser.add_subparsers(required=True, title="Overseer commands")
+    subparsers = parser.add_subparsers(required=True, title="Commands")
     cmd_init.cli(subparsers)
+    cmd_lint.cli(subparsers)
     cmd_inspect.cli(subparsers)
 
     args = parser.parse_args(argv)

@@ -9,3 +9,4 @@ node_modules/
 
 # intermediate dirs from our scripts
 .zd-cache/
+.zd_cache/
