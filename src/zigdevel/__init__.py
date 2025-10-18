@@ -10,7 +10,7 @@ from . import cmd_init
 from . import cmd_inspect
 
 
-def main(argv):
+def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser(
         description="""
     Overseer is an automation tool within zig-devel.
@@ -36,7 +36,3 @@ def main(argv):
         logging.basicConfig(level=logging.DEBUG)
 
     args.func(args)
-
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))

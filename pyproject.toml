@@ -1,7 +1,11 @@
 [project]
-name = "zig-devel"
+name = "zigdevel"
 version = "0.1.0"
 description = "Infrastructure of the zig-devel project"
+readme = "README.md"
+authors = [
+    { name = "Nikolay Govorov", email = "me@govorov.online" }
+]
 requires-python = ">=3.13"
 dependencies = [
     "nvchecker>=2.19",
@@ -10,3 +14,10 @@ dependencies = [
     "rich>=14.2.0",
     "ruff>=0.14.0",
 ]
+
+[project.scripts]
+zd = "zigdevel:main"
+
+[build-system]
+requires = ["uv_build>=0.8.11,<0.9.0"]
+build-backend = "uv_build"

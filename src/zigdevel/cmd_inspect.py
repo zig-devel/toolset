@@ -7,14 +7,10 @@ import shutil
 from pathlib import Path
 
 from plumbum import local
-from plumbum.cmd import curl, jq, git, nvchecker, nvcmp
-from rich.console import Console
+from plumbum.cmd import curl, jq, git
 
-console = Console()
-
-GITHUB_ORG = "zig-devel"
-
-_CWD = os.path.dirname(os.path.abspath(__file__))
+from .common import nvchecker, nvcmp
+from .common import GITHUB_ORG
 
 
 class PkgSettingsException(Exception):
@@ -147,9 +143,7 @@ def cli(subparsers):
     )
     parser.add_argument("--github-org", help="Github organization", default=GITHUB_ORG)
     parser.add_argument("--github-token", help="Github API token", required=False)
-    parser.add_argument(
-        "--cache-dir", help="Cache directory", default=".overseer_cache"
-    )
+    parser.add_argument("--cache-dir", help="Cache directory", default=".zd_cache")
     parser.add_argument(
         "--clear-cache",
         help="Clear repos cache",

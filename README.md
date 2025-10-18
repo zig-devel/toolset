@@ -3,8 +3,16 @@
 This repository contains common infrastructure for all libraries,
 such as CI, automatic releases, new version monitoring, etc.
 
-If you want to add a new tool, use a package manager that can lock the version.
-For internal scripts, prefer bash for simple ones and python for larger ones.
+Instead of multiple scripts, the entire infrastructure is collected
+in a single utility, `zd`. Try to avoid bash scripts and prefer
+to write a new command in `zd`.
+
+The tool serves several purposes:
+
+- explicitly check any implied rules;
+- run the same commands locally and on CI;
+- don't clutter libs repos with infrastructure;
+- avoid vendor lock-in with a single CI provider.
 
 To use project locally install dependencies:
 

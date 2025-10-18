@@ -3,30 +3,11 @@ import logging
 import os
 from pathlib import Path
 
-from plumbum.cmd import cat, sed, git, reuse, nvchecker
+from plumbum.cmd import cat, sed, git
 
-from rich.console import Console
-
-console = Console()
-
-GITHUB_ORG = "zig-devel"
-GITHUB_REPO = f"{GITHUB_ORG}/.github"
-INTERNAL_LICENSE = "0BSD"
-
-
-def cmd(command):
-    (returncode, stdout, stderr) = command.run(retcode=None)
-
-    stdout = stdout.strip()
-    if stdout != "":
-        logging.info(stdout)
-
-    if returncode != 0:
-        logging.error(f"'{command}' failed with exit code {returncode}")
-        stderr = stderr.strip()
-        if stderr != "":
-            logging.error(stderr)
-        exit(1)
+from .common import cmd, console
+from .common import reuse, nvchecker
+from .common import GITHUB_ORG, GITHUB_REPO, INTERNAL_LICENSE
 
 
 def _WriteFile(filename: str, payload: str):

@@ -1,9 +1,11 @@
 # package managers
 .venv/
-**/__pycache__/
-.ruff_cache/
-
 node_modules/
 
+*.egg-info/
+**/__pycache__/
+
+.ruff_cache/
+
 # intermediate dirs from our scripts
-.overseer_cache/
+.zd-cache/
