@@ -9,6 +9,7 @@ from rich.logging import RichHandler
 from . import cmd_init
 from . import cmd_lint
 from . import cmd_inspect
+from . import cmd_libcheck
 
 
 def main(argv=sys.argv[1:]):
@@ -25,6 +26,7 @@ def main(argv=sys.argv[1:]):
     cmd_init.cli(subparsers)
     cmd_lint.cli(subparsers)
     cmd_inspect.cli(subparsers)
+    cmd_libcheck.cli(subparsers)
 
     args = parser.parse_args(argv)
 

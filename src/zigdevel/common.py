@@ -34,16 +34,20 @@ nvcmp = local.get("nvcmp", os.path.join(_ROOT, "nvcmp"))
 nvchecker = local.get("nvchecker", os.path.join(_ROOT, "nvchecker"))
 
 
-def cmd(command):
+def cmd(command, *, withstderr=False, todebug=False):
     (returncode, stdout, stderr) = command.run(retcode=None)
 
     stdout = stdout.strip()
-    if stdout != "":
-        logging.info(stdout)
+    stderr = stderr.strip()
+
+    log = logging.debug if todebug else logging.info
+    stream = stderr if withstderr else stdout
+
+    if stream != "":
+        log(stream)
 
     if returncode != 0:
         logging.error(f"'{command}' failed with exit code {returncode}")
-        stderr = stderr.strip()
         if stderr != "":
             logging.error(stderr)
         exit(1)
