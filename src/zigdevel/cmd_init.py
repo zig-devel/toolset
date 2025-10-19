@@ -60,8 +60,6 @@ def _SetupGitConfigs(name: str):
 
 
 def _SetupGithubActions():
-    origin = f"{GITHUB_ORG}/{GITHUB_REPO_TOOLSET}/.github/workflows"
-
     logging.info("Generate library build workflow")
     _WriteFile(
         ".github/workflows/library.yml",
@@ -82,26 +80,7 @@ def _SetupGithubActions():
         jobs:
           build:
             name: Build and test library
-            uses: {origin}/_library.yml@latest
-        """,
-    )
-
-    logging.info("Generate library release workflow")
-    _WriteFile(
-        ".github/workflows/release.yml",
-        f"""
-        name: Prepare GH release
-
-        on:
-          push:
-            tags: [ '*.*.*-*' ]
-
-        jobs:
-          release:
-            name: Prepare GitHub release
-            uses: {origin}/_release.yml@latest
-            permissions:
-              contents: write
+            uses: {GITHUB_ORG}/{GITHUB_REPO_TOOLSET}/.github/workflows/_library.yml@latest
         """,
     )
 

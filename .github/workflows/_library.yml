@@ -1,4 +1,4 @@
-name: Build & Test library
+name: Test library
 
 on:
   workflow_call:
@@ -16,7 +16,71 @@ jobs:
     - run: pip install git+https://github.com/zig-devel/toolset#latest
     - run: zd lint --strict --no-check-sh
 
-  build:
+    - name: Consistent version
+      if: ${{ github.ref_type == 'tag' }}
+      run: |
+        number_regex="(0|[1-9][0-9]*)"  # valid: 0, 42; invalid: 00 or 08
+        version_regex="^$number_regex\.$number_regex\.$number_regex-$number_regex$"
+
+        # full package version, e.g. '1.2.3-2'
+        gittag_ref=${{github.ref_name}}
+        package_ref="$(sed -n 's/\s*\.version\s*=\s*"\(.*\)",/\1/p' build.zig.zon)"
+
+        if [[ ! $gittag_ref =~ $version_regex ]]; then
+          echo "Invalid version in git tag!"
+          exit 1
+        fi
+
+        if [ "$gittag_ref" != "$package_ref" ]; then
+          echo "Different versions in build.zig.zon and git tag: gittag_ref=$gittag_ref, package_ref=$package_ref."
+          exit 1
+        fi
+
+        # upstream version only, e.g. '1.2.3'
+        source_version=$(echo "$gittag_ref" | sed -n 's/\-[0-9]*$//p')
+        readme_version="$(cat README.md | head -1 | sed -n 's/^# .*@v\([0-9.]*\).*/\1/p')"
+        nvchecker_version="$(cat '.github/oldver.json' | jq -r '.data.upstream.version')"
+
+        if [ "$source_version" != "$readme_version" ]; then
+          echo "The readme header contains an incorrect upstream version: source_version=$source_version, readme_version=$readme_version."
+          exit 1
+        fi
+
+        # validate installation docs
+        grep -q "^zig fetch --save ${{ github.server_url }}/${{ github.repository }}/archive/refs/tags/${{github.ref_name}}.tar.gz$" README.md
+        if test $? -ne 0; then
+          echo "Incorrect version in installation documentation."
+          exit 1
+        fi
+
+        # validate version known nvchecker
+        if [ "$source_version" != "$nvchecker_version" ]; then
+          echo "Incorrect upstream version in nvchecker config, source_version=$source_version, nvchecker_version=$nvchecker_version."
+          exit 1
+        fi
+
+    - name: Cross compilation
+      run: |
+        optimizes=(Debug ReleaseSafe ReleaseFast ReleaseSmall)
+        triplets=(
+          x86_64-macos aarch64-macos
+
+          x86-windows x86_64-windows aarch64-windows
+
+          x86_64-linux-gnu  x86_64-linux-musl
+          aarch64-linux-gnu aarch64-linux-musl
+
+          x86-netbsd  arm-netbsd  x86_64-netbsd  aarch64-netbsd
+          x86-freebsd arm-freebsd x86_64-freebsd aarch64-freebsd
+        )
+
+        for triplet in "${triplets[@]}"; do
+          for optimize in "${optimizes[@]}"; do
+            zig build --summary all -Dtarget="${triplet}" -Doptimize="$optimize"
+          done
+        done
+
+  test:
     runs-on: ${{ matrix.os }}
     needs: [lint]
     strategy:
@@ -39,8 +103,29 @@ jobs:
     - uses: mlugg/setup-zig@v2
       with: { version: "${{ matrix.zig-version }}" }
 
-    - name: Build
-      run: zig build --summary all
-
     - name: Unit tests
-      run: zig build test --summary all
+      run: zig build test --summary all -Doptimize=ReleaseSafe
+
+  # Converting a git tag into a stub of an immutable release
+  release:
+    name: Create GH Release
+    runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is half the price
+    if: ${{ github.ref_type == 'tag' }}
+    needs: [test]
+    permissions:
+      contents: write  # for releases API
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: ${{ github.ref_name }}
+        tag_name: ${{ github.ref_name }}
+        body: |
+          **Release checks**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        # Don't change it; have someone review it before releasing.
+        # We use immutable releases, and there's no way to fix it.
+        draft: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
