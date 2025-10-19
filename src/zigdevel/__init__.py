@@ -9,6 +9,7 @@ from rich.logging import RichHandler
 from .github import GitHub
 
 from . import cmd_lint
+from . import cmd_list
 from . import cmd_scan
 from . import cmd_libinit
 from . import cmd_libcheck
@@ -28,6 +29,7 @@ def main(argv=sys.argv[1:]):
 
     subparsers = parser.add_subparsers(required=True, title="Commands")
     cmd_lint.cli(subparsers)
+    cmd_list.cli(subparsers)
     cmd_scan.cli(subparsers)
     cmd_libinit.cli(subparsers)
     cmd_libcheck.cli(subparsers)

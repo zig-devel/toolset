@@ -20,6 +20,10 @@ class Repository:
     has_projects: bool
     has_discussions: bool
 
+    created_at: str
+    updated_at: str
+    open_issues_count: int
+
     def is_active(self):
         return not self.private and not self.archived
 
@@ -37,6 +41,9 @@ class GitHub:
             self.org = org
         if org is not None:
             self.token = token
+
+    def is_repo_package(self, repo: Repository) -> bool:
+        return repo.is_active() and repo.name not in self.internal_repositories
 
     def get_package_url(self, name: str) -> str:
         return f"https://github.com/{self.org}/{name}"
@@ -104,6 +111,9 @@ class GitHub:
                     has_pages=it["has_pages"],
                     has_projects=it["has_projects"],
                     has_discussions=it["has_discussions"],
+                    created_at=it["created_at"],
+                    updated_at=it["updated_at"],
+                    open_issues_count=it["open_issues_count"],
                 )
                 for it in data
             ]

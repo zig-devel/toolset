@@ -23,7 +23,7 @@ class PkgOutdatedException(Exception):
 
 
 def inspect_package(args, gh: GitHub, repo: Repository):
-    if not repo.is_active() or repo.name in gh.internal_repositories:
+    if not gh.is_repo_package(repo):
         return
 
     logging.info(f"Check {repo.name} repository config...")
