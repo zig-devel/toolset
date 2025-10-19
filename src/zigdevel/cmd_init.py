@@ -66,9 +66,6 @@ def _SetupGithubActions():
         f"""
         name: Build and test library
 
-        permissions:
-          contents: read
-
         on:
           push:
             branches: [main]
@@ -81,6 +78,8 @@ def _SetupGithubActions():
           build:
             name: Build and test library
             uses: {GITHUB_ORG}/{GITHUB_REPO_TOOLSET}/.github/workflows/_library.yml@latest
+            permissions:
+                contents: write
         """,
     )
 
