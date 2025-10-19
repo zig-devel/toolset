@@ -5,12 +5,13 @@ import os
 import sys
 import shutil
 from pathlib import Path
+from dataclasses import asdict
 
 from plumbum import local
-from plumbum.cmd import curl, jq, git
+from plumbum.cmd import git
 
 from .common import nvchecker, nvcmp
-from .common import GITHUB_ORG, GITHUB_INTERNAL_REPOS
+from .github import GitHub, Repository
 
 
 class PkgSettingsException(Exception):
@@ -21,50 +22,19 @@ class PkgOutdatedException(Exception):
     pass
 
 
-def fetch_repositories(args, fd):
-    page = 1
-    while True:
-        api_url = f"https://api.github.com/orgs/{args.github_org}/repos?per_page=100&page={page}"
-        api_bearer = (
-            f"Authorization: Bearer {args.github_token}"
-            if args.github_token != ""
-            else ""
-        )
-
-        response = (
-            curl["-s", "--fail-with-body", "-H", api_bearer, api_url]
-            | jq["-r", "-c", ".[]"]
-        )().strip()
-        if response == "":
-            break
-
-        fd.write(response)
-        fd.write("\n")
-
-        page += 1
-
-
-def inspect_package(args, line):
-    if not line:
+def inspect_package(args, gh: GitHub, repo: Repository):
+    if not repo.is_active() or repo.name in gh.internal_repositories:
         return
 
-    lib = json.loads(line)
+    logging.info(f"Check {repo.name} repository config...")
 
-    if lib["name"] in GITHUB_INTERNAL_REPOS:
-        return
-
-    if lib["private"] or lib["archived"]:
-        return
-
-    logging.info(f"Check {lib['name']} repository config...")
-
-    git_dir = os.path.join(args.cache_dir, lib["name"])
+    git_dir = os.path.join(args.cache_dir, repo.name)
 
     if os.path.exists(git_dir):
         logging.debug("Update cached repository")
         with local.cwd(local.cwd / git_dir):
             git["fetch", "-q", "origin"]()
-            git["reset", "-q", "--hard", f"origin/{lib['default_branch']}"]()
+            git["reset", "-q", "--hard", f"origin/{repo.default_branch}"]()
             git["clean", "-q", "-xd", "--force"]()
     else:
         logging.debug("Clone repository")
@@ -73,28 +43,28 @@ def inspect_package(args, line):
             "--depth",
             "1",
             "--branch",
-            lib["default_branch"],
-            lib["clone_url"],
+            repo.default_branch,
+            repo.clone_url,
             git_dir,
         ]()
 
     if args.check_repository_settings:
-        if lib["default_branch"] != "main":
+        if repo.default_branch != "main":
             raise PkgSettingsException(
-                f"Default branch must me 'main' not {lib['default_branch']}"
+                f"Default branch must me 'main' not {repo.default_branch}"
             )
-        if lib["is_template"]:
+        if repo.is_template:
             raise PkgSettingsException("Repository should not be a template")
 
-        if not lib["has_issues"]:
+        if not repo.has_issues:
             raise PkgSettingsException("Issues must be enabled")
-        if lib["has_wiki"]:
+        if repo.has_wiki:
             raise PkgSettingsException("Wiki must be disabled")
-        if lib["has_pages"]:
+        if repo.has_pages:
             raise PkgSettingsException("Pages must be disabled")
-        if lib["has_projects"]:
+        if repo.has_projects:
             raise PkgSettingsException("Projects must be disabled")
-        if lib["has_discussions"]:
+        if repo.has_discussions:
             raise PkgSettingsException("Discussions must be disabled")
 
     if args.check_updates:
@@ -102,10 +72,10 @@ def inspect_package(args, line):
             nvchecker["-c", ".nvchecker.toml"]()
 
             if nvcmp["-c", ".nvchecker.toml"]() != "":
-                raise PkgOutdatedException(f"'{lib['name']}' has new version")
+                raise PkgOutdatedException(f"'{repo.name}' has new version")
 
 
-def run(args):
+def run(args, github: GitHub):
     if args.clear_cache:
         shutil.rmtree(args.cache_dir, ignore_errors=True)
 
@@ -116,12 +86,14 @@ def run(args):
     else:
         Path(args.cache_dir).mkdir(parents=True, exist_ok=True)
         with open(repos_file, "w", encoding="utf-8") as fd:
-            fetch_repositories(args, fd)
+            repos = github.fetch_repos()
+            json.dump([asdict(it) for it in repos], fd)
 
     with open(repos_file, "r", encoding="utf-8") as fd:
-        for line in fd:
+        repos = json.load(fd)
+        for repo in repos:
             try:
-                inspect_package(args, line.strip())
+                inspect_package(args, github, Repository(**repo))
             except (PkgSettingsException, PkgOutdatedException) as err:
                 logging.error(err)
                 sys.exit(1)
@@ -129,8 +101,8 @@ def run(args):
 
 def cli(subparsers):
     parser = subparsers.add_parser(
-        "inspect",
-        help="Checks each packet and looks for potential errors",
+        "scan",
+        help="Scan all packages and looks for potential errors",
         description="""
         This script crawls all repositories and performs general checks
         such as repository formatting and searching for new versions.
@@ -144,8 +116,6 @@ def cli(subparsers):
         - new version from upstream
         """,
     )
-    parser.add_argument("--github-org", help="Github organization", default=GITHUB_ORG)
-    parser.add_argument("--github-token", help="Github API token", required=False)
     parser.add_argument("--cache-dir", help="Cache directory", default=".zd_cache")
     parser.add_argument(
         "--clear-cache",

@@ -5,6 +5,7 @@ from plumbum import local
 from plumbum.cmd import find
 from plumbum.commands.processes import CommandNotFound
 
+from .github import GitHub
 from .common import cmd, console
 
 
@@ -57,7 +58,7 @@ def lint_licenses(args):
         cmd(reuse["lint"])
 
 
-def run(args):
+def run(args, github: GitHub):
     if args.check_sh:
         console.print("[bold]Run shell linter...[/bold]")
         lint_sh(args)

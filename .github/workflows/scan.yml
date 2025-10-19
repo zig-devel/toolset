@@ -1,4 +1,4 @@
-name: Inspect packages
+name: Scan packages
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  inspect:
+  scan:
     runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is half the price
     steps:
     - uses: actions/checkout@v5
@@ -21,4 +21,4 @@ jobs:
         activate-environment: true
 
     - run: pip install .  # install it to call it via a shortcut
-    - run: zd inspect --github-token ${{ secrets.GITHUB_TOKEN }}
+    - run: zd --github-token ${{ secrets.GITHUB_TOKEN }} scan

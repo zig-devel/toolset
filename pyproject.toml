@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "nvchecker>=2.19",
     "plumbum>=1.9.0",
+    "requests>=2.32.5",
     "reuse>=6.1.2",
     "rich>=14.2.0",
     "ruff>=0.14.0",

@@ -6,9 +6,11 @@ import logging
 
 from rich.logging import RichHandler
 
-from . import cmd_init
+from .github import GitHub
+
 from . import cmd_lint
-from . import cmd_inspect
+from . import cmd_scan
+from . import cmd_libinit
 from . import cmd_libcheck
 
 
@@ -21,11 +23,13 @@ def main(argv=sys.argv[1:]):
         """
     )
     parser.add_argument("--verbose", help="Verbose logging", action="store_true")
+    parser.add_argument("--github-org", help="Github organization", required=False)
+    parser.add_argument("--github-token", help="Github API token", required=False)
 
     subparsers = parser.add_subparsers(required=True, title="Commands")
-    cmd_init.cli(subparsers)
     cmd_lint.cli(subparsers)
-    cmd_inspect.cli(subparsers)
+    cmd_scan.cli(subparsers)
+    cmd_libinit.cli(subparsers)
     cmd_libcheck.cli(subparsers)
 
     args = parser.parse_args(argv)
@@ -39,4 +43,5 @@ def main(argv=sys.argv[1:]):
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
-    args.func(args)
+    github = GitHub(org=args.github_org, token=args.github_token)
+    args.func(args, github)

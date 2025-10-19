@@ -5,6 +5,8 @@ import argparse
 
 from plumbum import local
 from plumbum.cmd import cat, git, sed, head, grep
+
+from .github import GitHub
 from .common import cmd, console
 
 
@@ -118,7 +120,7 @@ def crosscompile(zig):
             build(zig, triplet, optimize)
 
 
-def run(args):
+def run(args, github: GitHub):
     zig = local.get("zig")
     if zig is None:
         logging.error("Zig not found")
