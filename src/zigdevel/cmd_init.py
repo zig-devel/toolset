@@ -36,7 +36,7 @@ def _WriteFile(filename: str, payload: str):
         fd.write("\n")
 
 
-def _SetupGitConfigs():
+def _SetupGitConfigs(name: str):
     logging.info("Generate .gitattributes")
     _WriteFile(
         ".gitattributes",
@@ -54,6 +54,9 @@ def _SetupGitConfigs():
         /zig-out
         """,
     )
+
+    logging.info("Set git origin")
+    cmd(git["remote", "add", "origin", f"git@github.com:{GITHUB_ORG}/{name}.git"])
 
 
 def _SetupGithubActions():
@@ -318,7 +321,7 @@ def run(args):
     os.chdir(args.name)
 
     console.print("[bold]Setup git configs...[/bold]")
-    _SetupGitConfigs()
+    _SetupGitConfigs(args.name)
 
     console.print("[bold]Setup GitHub Actions...[/bold]")
     _SetupGithubActions()
@@ -334,6 +337,10 @@ def run(args):
 
     console.print("[bold]Generate readme...[/bold]")
     _SetupDocs(args.name, args.description, args.url, version, licenses)
+
+    logging.info("Commit template")
+    cmd(git["add", "."])
+    cmd(git["commit", "-am", "ZD: init library repository from template"])
 
 
 def cli(subparsers):
