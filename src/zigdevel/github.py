@@ -67,6 +67,7 @@ class GitHub:
         on:
           push:
             branches: [main]
+            tags: [ '*.*.*-*' ]
           pull_request:
             branches: [main]
             types: [opened, synchronize]
@@ -77,7 +78,7 @@ class GitHub:
             name: Build and test library
             uses: {self.org}/{self.toolset_repository}/.github/workflows/_library.yml@latest
             permissions:
-                contents: write
+              contents: write
         """
         return filename, content
 

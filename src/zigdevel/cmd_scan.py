@@ -2,7 +2,6 @@ import argparse
 import json
 import logging
 import os
-import sys
 import shutil
 from pathlib import Path
 from dataclasses import asdict
@@ -96,7 +95,6 @@ def run(args, github: GitHub):
                 inspect_package(args, github, Repository(**repo))
             except (PkgSettingsException, PkgOutdatedException) as err:
                 logging.error(err)
-                sys.exit(1)
 
 
 def cli(subparsers):
