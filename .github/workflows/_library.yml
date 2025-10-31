@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  lint:
+  smoke:
     name: Build & check
     runs-on: blacksmith-2vcpu-ubuntu-2404-arm  # arm is half the price
     steps:
@@ -22,7 +22,7 @@ jobs:
 
   test:
     runs-on: ${{ matrix.os }}
-    needs: [lint]
+    needs: [smoke]
     strategy:
       fail-fast: true  # save CI if tests fail
       matrix:
@@ -31,18 +31,15 @@ jobs:
         # We can afford x64 and arm64. For the macos and windows, only the main architectures.
         os:
         - macos-latest                     # macos arm64
-        # TODO: return when all packages are builded on Windows
-        # - windows-latest                 # windows x64
+        - windows-latest                   # windows x64
         - blacksmith-2vcpu-ubuntu-2404     # linux x64
         - blacksmith-2vcpu-ubuntu-2404-arm # linux arm64
         # TODO: perhaps we can save CI if check all zig versions within a single job
         zig-version: [latest, master]
     steps:
     - uses: actions/checkout@v5
-
     - uses: mlugg/setup-zig@v2
       with: { version: "${{ matrix.zig-version }}" }
-
     - name: Unit tests
       run: zig build test --summary all -Doptimize=ReleaseSafe
 
