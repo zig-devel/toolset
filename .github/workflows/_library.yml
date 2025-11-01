@@ -35,13 +35,14 @@ jobs:
         - blacksmith-2vcpu-ubuntu-2404     # linux x64
         - blacksmith-2vcpu-ubuntu-2404-arm # linux arm64
         # TODO: perhaps we can save CI if check all zig versions within a single job
-        zig-version: [latest, master]
+        zig_version: [latest, master]
     steps:
     - uses: actions/checkout@v5
     - uses: mlugg/setup-zig@v2
-      with: { version: "${{ matrix.zig-version }}" }
+      with: { version: "${{ matrix.zig_version }}" }
     - name: Unit tests
       run: zig build test --summary all -Doptimize=ReleaseSafe
+      continue-on-error: ${{ matrix.zig_version == 'master' }} # https://github.com/ziglang/translate-c/issues/201
 
   # Converting a git tag into a stub of an immutable release
   release:
